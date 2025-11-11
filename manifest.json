@@ -1,0 +1,40 @@
+{
+  "manifest_version": 3,
+  "name": "YouTube Quick Controls",
+  "version": "1.0.0",
+  "description": "Fast, customizable quality and speed controls with keyboard shortcuts for YouTube videos. One-click access to all qualities (144p-8K) and extended speeds (0.25x-4x).",
+  "homepage_url": "https://harsh98trivedi.github.io/links",
+  "author": "Harsh Trivedi",
+  "permissions": ["storage", "activeTab"],
+  "content_scripts": [
+    {
+      "matches": ["*://www.youtube.com/*"],
+      "js": ["content.js"],
+      "css": ["styles.css"],
+      "run_at": "document_start"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "YouTube Quick Controls Settings",
+    "default_icon": {
+      "16": "images/icon-16.png",
+      "48": "images/icon-48.png",
+      "128": "images/icon-128.png"
+    }
+  },
+  "icons": {
+    "16": "images/icon-16.png",
+    "48": "images/icon-48.png",
+    "128": "images/icon-128.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["images/*.png"],
+      "matches": ["*://www.youtube.com/*"]
+    }
+  ],
+  "minimum_chrome_version": "88",
+  "offline_enabled": true,
+  "short_name": "YT Quick Controls"
+}
