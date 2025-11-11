@@ -259,16 +259,7 @@ Your privacy is paramount. This extension:
 
 ## 📄 License
 
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for complete details.
-
-### What this means:
-
-- ✅ **Commercial use**: Use in commercial projects
-- ✅ **Modification**: Modify and distribute
-- ✅ **Distribution**: Share with others
-- ✅ **Private use**: Use for personal projects
-- ❗ **Liability**: No warranty provided
-- ❗ **Trademark**: YouTube™ is a registered trademark of Google
+This project is licensed under the **The Unlicense license** - see the [LICENSE](LICENSE) file for complete details.
 
 ---
 
@@ -284,3 +275,4 @@ This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) 
   [![GitHub forks](https://img.shields.io/github/forks/harsh98trivedi/YouTube-Quick-Controls?style=social)](https://github.com/harsh98trivedi/YouTube-Quick-Controls/network)
   
 </div>
+
