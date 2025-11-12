@@ -1,6 +1,6 @@
-# YouTube Quick Controls
+# [YouTube Quick Controls](https://chromewebstore.google.com/detail/youtube-quick-controls/hcbpfgoejhnhmdhkbnkeofhfmfmjfnjg)
 
-![YouTube Quick Controls](images/meta.jpg)
+[![YouTube Quick Controls](images/meta.jpg)](https://chromewebstore.google.com/detail/youtube-quick-controls/hcbpfgoejhnhmdhkbnkeofhfmfmjfnjg)
 
 ## 🚀 What is YouTube Quick Controls?
 
@@ -275,4 +275,5 @@ This project is licensed under the **The Unlicense license** - see the [LICENSE]
   [![GitHub forks](https://img.shields.io/github/forks/harsh98trivedi/YouTube-Quick-Controls?style=social)](https://github.com/harsh98trivedi/YouTube-Quick-Controls/network)
   
 </div>
+
 
