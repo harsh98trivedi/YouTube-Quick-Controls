@@ -3,7 +3,7 @@
   "name": "YouTube Quick Controls",
   "version": "1.0.0",
   "description": "Fast, customizable quality and speed controls with keyboard shortcuts for YouTube videos",
-  "homepage_url": "https://harsh98trivedi.github.io/links",
+  "homepage_url": "https://github.com/harsh98trivedi/YouTube-Quick-Controls",
   "author": "Harsh Trivedi",
   "permissions": ["storage", "activeTab"],
   "content_scripts": [
@@ -38,4 +38,5 @@
   "offline_enabled": true,
   "short_name": "YT Quick Controls"
 }
+
 
