@@ -14,6 +14,7 @@
   let settings = {
     qualityEnabled: true,
     speedEnabled: true,
+    toolsEnabled: true,
     shortcuts: {
       quality: {
         auto: "Alt+0",
@@ -23,6 +24,7 @@
         large: "Alt+4",
         hd720: "Alt+5",
         hd1080: "Alt+6",
+        hd1080premium: "Not Set",
         hd1440: "Alt+7",
         hd2160: "Alt+8",
         hd4320: "Alt+9",
@@ -54,6 +56,7 @@
     large: "480p",
     hd720: "720p",
     hd1080: "1080p",
+    hd1080premium: "1080p Premium",
     hd1440: "1440p",
     hd2160: "2160p",
     hd2880: "2880p",
@@ -165,6 +168,7 @@
         const result = await chrome.storage.sync.get({
           qualityEnabled: true,
           speedEnabled: true,
+          toolsEnabled: true,
           shortcuts: settings.shortcuts,
         });
         settings = result;
@@ -275,27 +279,56 @@
       return;
     }
 
+    let useDomClick = true;
+
     try {
       // Method 1: Try direct API call
-      if (typeof p.setPlaybackQuality === "function") {
-        p.setPlaybackQuality(quality);
-        console.log("[YT Controller] Quality set via player API");
-
-        // FIXED: More aggressive active state updates for shortcuts
-        setTimeout(() => updateActiveStates(), 100);
-        setTimeout(() => updateActiveStates(), 300);
-        setTimeout(() => updateActiveStates(), 500);
-        return;
+      // YouTube API ignores premium strings. It also sometimes ignores standard strings unless Range is set.
+      if (quality !== "hd1080premium") {
+        if (typeof p.setPlaybackQualityRange === "function") {
+          p.setPlaybackQualityRange(quality, quality);
+        }
+        if (typeof p.setPlaybackQuality === "function") {
+          p.setPlaybackQuality(quality);
+          console.log("[YT Controller] Quality set via player API:", quality);
+          // Don't use DOM click if we have the API, to avoid menu flashing. But Premium MUST use DOM click.
+          useDomClick = false; 
+          
+          setTimeout(() => updateActiveStates(), 100);
+          setTimeout(() => updateActiveStates(), 300);
+          setTimeout(() => updateActiveStates(), 500);
+        }
       }
     } catch (e) {
-      console.log("[YT Controller] Player API failed:", e);
+      console.log("[YT Controller] Player API failed or rejected:", e);
     }
 
-    // Method 2: Simulate clicking YouTube's quality menu (more reliable)
-    try {
-      simulateQualityClick(quality);
-    } catch (e) {
-      console.error("[YT Controller] Quality simulation failed:", e);
+    if (useDomClick) {
+      // Method 2: Simulate clicking YouTube's quality menu
+      try {
+        simulateQualityClick(quality);
+      } catch (e) {
+        console.error("[YT Controller] Quality simulation failed:", e);
+      }
+    } else {
+      // Even if API "succeeded", sometimes YouTube ignores it. If it hasn't changed quickly, force DOM click.
+      setTimeout(() => {
+        let currentLabel = "";
+        const settingsBtn = document.querySelector(".ytp-settings-button");
+        if (settingsBtn) {
+          const qtyDisplays = document.querySelectorAll(".ytp-menuitem");
+          for (const display of qtyDisplays) {
+            if (display.textContent.toLowerCase().includes("quality")) {
+               currentLabel = display.textContent.toLowerCase();
+            }
+          }
+        }
+        // If the API failed to update the quality string, force DOM click.
+        if (currentLabel && !currentLabel.includes("auto") && !currentLabel.includes(quality.replace("hd", ""))) {
+           console.log("[YT Controller] API failed to stick, falling back to DOM click.");
+           simulateQualityClick(quality);
+        }
+      }, 500);
     }
   }
 
@@ -309,9 +342,17 @@
       return;
     }
 
-    settingsBtn.click();
+    // Ensure menu is closed first to get a clean state (main panel)
+    const settingsMenu = document.querySelector(".ytp-settings-menu");
+    if (settingsMenu && settingsMenu.style.display !== "none") {
+      settingsBtn.click();
+    }
 
     setTimeout(() => {
+      // Now toggle open
+      settingsBtn.click();
+
+      setTimeout(() => {
       // Look for quality menu item
       const menuItems = document.querySelectorAll(".ytp-menuitem");
       let qualityMenuItem = null;
@@ -349,7 +390,18 @@
               shouldClick = true;
             } else if (targetQuality === "hd720" && text.includes("720")) {
               shouldClick = true;
-            } else if (targetQuality === "hd1080" && text.includes("1080")) {
+            } else if (
+              targetQuality === "hd1080" &&
+              text.includes("1080") &&
+              !text.includes("premium") &&
+              !text.includes("enhanced")
+            ) {
+              shouldClick = true;
+            } else if (
+              targetQuality === "hd1080premium" &&
+              text.includes("1080") &&
+              (text.includes("premium") || text.includes("enhanced"))
+            ) {
               shouldClick = true;
             } else if (targetQuality === "hd1440" && text.includes("1440")) {
               shouldClick = true;
@@ -407,6 +459,7 @@
         settingsBtn.click();
       }
     }, 200);
+    }, 50);
   }
 
   function setSpeed(speed) {
@@ -443,8 +496,39 @@
 
     try {
       let quality = null;
+      let isPremium = false;
 
-      // Method 1: Direct API (try first, but don't always trust it for Auto)
+      // Method 1: Check YouTube's quality selector text first
+      const settingsBtn = document.querySelector(".ytp-settings-button");
+      if (settingsBtn) {
+        const qualityDisplays = document.querySelectorAll(".ytp-menuitem");
+        for (const display of qualityDisplays) {
+          const text = display.textContent.toLowerCase();
+          
+          // Check main settings menu summary item
+          if (text.includes("quality")) {
+            if (text.includes("auto")) {
+              console.log("[YT Controller] Detected Auto quality from menu text");
+              return "auto";
+            }
+            if (text.includes("premium") || text.includes("enhanced")) {
+              isPremium = true;
+            }
+          }
+          
+          // Check quality submenu explicitly checked item (YouTube uses aria-checked)
+          if (display.getAttribute("aria-checked") === "true") {
+             if (text.includes("premium") || text.includes("enhanced")) {
+                isPremium = true;
+             }
+             if (text.includes("auto")) {
+                return "auto";
+             }
+          }
+        }
+      }
+
+      // Method 2: Direct API (try next, but don't always trust it for Auto)
       if (typeof p.getPlaybackQuality === "function") {
         quality = p.getPlaybackQuality();
         console.log("[YT Controller] API quality:", quality);
@@ -456,27 +540,10 @@
           quality !== "" &&
           quality !== "auto"
         ) {
-          return quality;
-        }
-      }
-
-      // Method 2: Check if YouTube's quality selector shows Auto
-      // This is the most reliable way to detect Auto mode
-      const settingsBtn = document.querySelector(".ytp-settings-button");
-      if (settingsBtn) {
-        // Look for existing quality display text in the player
-        const qualityDisplays = document.querySelectorAll(".ytp-menuitem");
-        for (const display of qualityDisplays) {
-          const text = display.textContent.toLowerCase();
-          if (text.includes("quality")) {
-            // Check if the quality line shows "Auto"
-            if (text.includes("auto")) {
-              console.log(
-                "[YT Controller] Detected Auto quality from menu text"
-              );
-              return "auto";
-            }
+          if (quality === "hd1080" && isPremium) {
+            return "hd1080premium";
           }
+          return quality;
         }
       }
 
@@ -488,6 +555,9 @@
 
         // If we have a valid quality from API and video dimensions match, use API
         if (quality && quality !== "unknown" && quality !== "") {
+          if (quality === "hd1080" && isPremium) {
+            return "hd1080premium";
+          }
           return quality;
         }
 
@@ -497,7 +567,7 @@
         if (videoHeight <= 360) return "medium";
         if (videoHeight <= 480) return "large";
         if (videoHeight <= 720) return "hd720";
-        if (videoHeight <= 1080) return "hd1080";
+        if (videoHeight <= 1080) return isPremium ? "hd1080premium" : "hd1080";
         if (videoHeight <= 1440) return "hd1440";
         if (videoHeight <= 2160) return "hd2160";
         if (videoHeight <= 2880) return "hd2880";
@@ -685,38 +755,75 @@
       const controlsWrapper = document.createElement("div");
       controlsWrapper.className = "ytc-controls-wrapper";
 
-      // Create speed section (left side) - only if enabled
-      if (settings.speedEnabled) {
-        const speedSection = document.createElement("div");
-        speedSection.className = "ytc-inline-section";
-
-        const speedHeader = document.createElement("div");
-        speedHeader.className = "ytc-inline-header";
-
-        const speedButtons = document.createElement("div");
-        speedButtons.className = "ytc-inline-buttons";
-        speedButtons.id = "speed-buttons";
-
-        speedSection.appendChild(speedHeader);
-        speedSection.appendChild(speedButtons);
-        controlsWrapper.appendChild(speedSection);
-      }
-
-      // Create quality section (right side) - only if enabled
+      // ── 1. Quality section (top row) ──
       if (settings.qualityEnabled) {
         const qualitySection = document.createElement("div");
         qualitySection.className = "ytc-inline-section";
 
-        const qualityHeader = document.createElement("div");
-        qualityHeader.className = "ytc-inline-header";
+        const qualityToggleBtn = document.createElement("button");
+        qualityToggleBtn.className = "ytc-section-toggle";
+        qualityToggleBtn.innerHTML = svgIcon(ICONS.quality) + " Quality " + svgIcon(ICONS.chevron, 11);
+        qualityToggleBtn.title = "Toggle Quality controls";
+        let qualityExpanded = true;
 
         const qualityButtons = document.createElement("div");
-        qualityButtons.className = "ytc-inline-buttons";
+        qualityButtons.className = "ytc-inline-buttons ytc-collapsible";
         qualityButtons.id = "quality-buttons";
 
-        qualitySection.appendChild(qualityHeader);
-        qualitySection.appendChild(qualityButtons);
+        qualityToggleBtn.addEventListener("click", (e) => {
+          e.preventDefault(); e.stopPropagation();
+          qualityExpanded = !qualityExpanded;
+          qualityButtons.classList.toggle("collapsed", !qualityExpanded);
+          qualityToggleBtn.classList.toggle("section-collapsed", !qualityExpanded);
+        });
+
+        qualitySection.appendChild(qualityButtons);  // buttons LEFT of toggle
+        qualitySection.appendChild(qualityToggleBtn); // toggle stays RIGHT
         controlsWrapper.appendChild(qualitySection);
+      }
+
+      // ── 2. Tools section (middle row) ──
+      if (settings.toolsEnabled !== false) {
+        const toolsSection = document.createElement("div");
+        toolsSection.className = "ytc-inline-section";
+
+        const toolsHeader = document.createElement("div");
+        toolsHeader.className = "ytc-inline-header";
+
+        const toolsButtons = document.createElement("div");
+        toolsButtons.className = "ytc-inline-buttons";
+        toolsButtons.id = "tools-buttons";
+
+        toolsSection.appendChild(toolsHeader);
+        toolsSection.appendChild(toolsButtons);
+        controlsWrapper.appendChild(toolsSection);
+      }
+
+      // ── 3. Speed section (bottom row) ──
+      if (settings.speedEnabled) {
+        const speedSection = document.createElement("div");
+        speedSection.className = "ytc-inline-section";
+
+        const speedToggleBtn = document.createElement("button");
+        speedToggleBtn.className = "ytc-section-toggle";
+        speedToggleBtn.innerHTML = svgIcon(ICONS.speed) + " Speed " + svgIcon(ICONS.chevron, 11);
+        speedToggleBtn.title = "Toggle Speed controls";
+        let speedExpanded = true;
+
+        const speedButtons = document.createElement("div");
+        speedButtons.className = "ytc-inline-buttons ytc-collapsible";
+        speedButtons.id = "speed-buttons";
+
+        speedToggleBtn.addEventListener("click", (e) => {
+          e.preventDefault(); e.stopPropagation();
+          speedExpanded = !speedExpanded;
+          speedButtons.classList.toggle("collapsed", !speedExpanded);
+          speedToggleBtn.classList.toggle("section-collapsed", !speedExpanded);
+        });
+
+        speedSection.appendChild(speedButtons);     // buttons LEFT of toggle
+        speedSection.appendChild(speedToggleBtn);    // toggle stays RIGHT
+        controlsWrapper.appendChild(speedSection);
       }
 
       container.appendChild(controlsWrapper);
@@ -725,15 +832,18 @@
       metadataElement.parentNode.insertBefore(container, metadataElement);
 
       // Populate buttons based on settings
-      if (settings.speedEnabled) {
-        populateSpeedButtons();
-      }
-
       if (settings.qualityEnabled) {
         startQualityDetection();
       } else {
-        // Still setup player listeners for speed if quality is disabled
         setupPlayerListeners();
+      }
+
+      if (settings.toolsEnabled !== false) {
+        populateToolsButtons();
+      }
+
+      if (settings.speedEnabled) {
+        populateSpeedButtons();
       }
 
       console.log("[YT Controller] Controls created with settings:", settings);
@@ -765,6 +875,277 @@
     );
   }
 
+  // SVG icon helper — Lucide-compatible inline SVGs
+  function svgIcon(path, size = 13) {
+    return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">${path}</svg>`;
+  }
+
+  const ICONS = {
+    volume:    '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>',
+    mute:      '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><line x1="23" y1="9" x2="17" y2="15"/><line x1="17" y1="9" x2="23" y2="15"/>',
+    cc:        '<rect x="2" y="6" width="20" height="12" rx="2"/><path d="M7 12h2m4 0h4"/><path d="M7 16h8"/>',
+    // Camera icon for screenshot
+    frame:     '<path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/>',
+    loop:      '<polyline points="17 2 21 6 17 10"/><path d="M21 6H8a6 6 0 0 0-6 6v1"/><polyline points="7 22 3 18 7 14"/><path d="M3 18h13a6 6 0 0 0 6-6v-1"/>',
+    link:      '<path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/>',
+    copyurl:   '<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
+    embed:     '<polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/>',
+    chevron:   '<polyline points="6 9 12 15 18 9"/>',
+    quality:   '<rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/>',
+    speed:     '<circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>',
+  };
+
+  // Tracks last non-zero volume for mute toggle restore
+  let _lastVol = 100;
+
+  function populateToolsButtons() {
+    const toolsContainer = document.getElementById("tools-buttons");
+    if (!toolsContainer) return;
+    toolsContainer.innerHTML = "";
+
+    // ── 1. Custom Volume Slider Widget ──────────────────────────────────────
+    const volWrapper = document.createElement("div");
+    volWrapper.className = "ytc-vol-widget";
+
+    // Distinct volume pill — has extra accent class
+    const volPill = document.createElement("button");
+    volPill.className = "ytc-btn ytc-tool-btn ytc-vol-pill ytc-vol-accent";
+    const getVol = () => {
+      const p = getPlayer();
+      if (p && typeof p.getVolume === "function") {
+        return p.isMuted() ? 0 : p.getVolume();
+      }
+      const v = document.querySelector("video");
+      return v ? Math.round(v.muted ? 0 : v.volume * 100) : 100;
+    };
+    const updateVolPill = (val) => {
+      const icon = val === 0 ? ICONS.mute : ICONS.volume;
+      // Show a distinct muted label when muted
+      const label = val === 0 ? "Muted" : `${val}%`;
+      volPill.innerHTML = svgIcon(icon) + ` ${label}`;
+      volPill.classList.toggle("ytc-vol-muted", val === 0);
+    };
+    // Init: capture real volume before any state changes
+    const initVol = getVol();
+    if (initVol > 0) _lastVol = initVol;
+    updateVolPill(initVol);
+
+    // Slider panel (hidden by default, shown on hover/click)
+    const volPanel = document.createElement("div");
+    volPanel.className = "ytc-vol-panel";
+
+    const volSlider = document.createElement("input");
+    volSlider.type = "range";
+    volSlider.min = 0;
+    volSlider.max = 100;
+    volSlider.step = 5;   // Snaps every 5%
+    volSlider.value = getVol();
+    volSlider.className = "ytc-vol-slider";
+
+    // Snap labels (0, 25, 50, 75, 100)
+    const volTicks = document.createElement("div");
+    volTicks.className = "ytc-vol-ticks";
+    [0, 25, 50, 75, 100].forEach(v => {
+      const t = document.createElement("span");
+      t.textContent = v + "%";
+      volTicks.appendChild(t);
+    });
+
+    const setVolume = (val) => {
+      const p = getPlayer();
+      if (p && typeof p.setVolume === "function") {
+        p.setVolume(val);
+        if (val > 0 && typeof p.unMute === "function") p.unMute();
+        if (val === 0 && typeof p.mute === "function") p.mute();
+      } else {
+        const v = document.querySelector("video");
+        if (v) { v.volume = val / 100; v.muted = val === 0; }
+      }
+      if (val > 0) _lastVol = val; // track last non-zero for restore-on-unmute
+      updateVolPill(val);
+      volSlider.value = val;
+      volSlider.style.setProperty("--val", val);
+    };
+
+    // Set initial fill position
+    volSlider.style.setProperty("--val", volSlider.value);
+
+    volSlider.addEventListener("input", (e) => setVolume(parseInt(e.target.value)));
+
+    // Click on pill: mute → restore previous vol; unmuted → mute
+    volPill.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const cur = getVol();
+      setVolume(cur === 0 ? _lastVol : 0);
+    });
+
+    // ── Hover: show panel immediately, hide with a grace-period delay ──────────
+    // This prevents the panel from vanishing before the cursor can reach it.
+    let _volHideTimer = null;
+
+    const showPanel = () => {
+      clearTimeout(_volHideTimer);
+      volPanel.classList.add("show");
+    };
+    const hidePanel = () => {
+      _volHideTimer = setTimeout(() => volPanel.classList.remove("show"), 350);
+    };
+
+    // Pill hover
+    volWrapper.addEventListener("mouseenter", showPanel);
+    volWrapper.addEventListener("mouseleave", hidePanel);
+
+    // Panel itself — cancel hide when cursor is inside
+    volPanel.addEventListener("mouseenter", showPanel);
+    volPanel.addEventListener("mouseleave", hidePanel);
+
+
+    volPanel.appendChild(volSlider);
+    volPanel.appendChild(volTicks);
+    volWrapper.appendChild(volPill);
+    volWrapper.appendChild(volPanel);
+    toolsContainer.appendChild(volWrapper);
+
+    // ── 2. CC Toggle ─────────────────────────────────────────────────────────
+    const ccBtn = document.createElement("button");
+    ccBtn.className = "ytc-btn ytc-tool-btn";
+    ccBtn.innerHTML = svgIcon(ICONS.cc) + " CC";
+    ccBtn.title = "Toggle Captions";
+    ccBtn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const btn = document.querySelector(".ytp-subtitles-button");
+      if (btn) btn.click();
+    });
+    toolsContainer.appendChild(ccBtn);
+
+    // ── 3. Screenshot ─────────────────────────────────────────────────────────
+    const screenshotBtn = document.createElement("button");
+    screenshotBtn.className = "ytc-btn ytc-tool-btn";
+    screenshotBtn.innerHTML = svgIcon(ICONS.frame) + " Frame";
+    screenshotBtn.title = "Screenshot current frame";
+    screenshotBtn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const video = document.querySelector("video");
+      if (!video) return;
+      const canvas = document.createElement("canvas");
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      canvas.getContext("2d").drawImage(video, 0, 0);
+      const a = document.createElement("a");
+      a.href = canvas.toDataURL("image/png");
+      a.download = `YouTube_Screenshot_${Date.now()}.png`;
+      a.click();
+    });
+    toolsContainer.appendChild(screenshotBtn);
+
+    // ── 4. Loop ───────────────────────────────────────────────────────────────
+    const loopBtn = document.createElement("button");
+    loopBtn.className = "ytc-btn ytc-tool-btn";
+    loopBtn.innerHTML = svgIcon(ICONS.loop) + " Loop";
+    loopBtn.title = "Toggle Loop";
+    const vid = document.querySelector("video");
+    if (vid && vid.loop) loopBtn.classList.add("active");
+    loopBtn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const video = document.querySelector("video");
+      if (!video) return;
+      video.loop = !video.loop;
+      loopBtn.classList.toggle("active", video.loop);
+    });
+    toolsContainer.appendChild(loopBtn);
+
+    // ── 5. Copy Time Link ─────────────────────────────────────────────────────
+    const copyLinkBtn = document.createElement("button");
+    copyLinkBtn.className = "ytc-btn ytc-tool-btn";
+    copyLinkBtn.innerHTML = svgIcon(ICONS.link) + " Time Link";
+    copyLinkBtn.title = "Copy link at current timestamp";
+    copyLinkBtn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const v = document.querySelector("video");
+      if (!v) return;
+      const url = new URL(location.href);
+      url.searchParams.set("t", Math.floor(v.currentTime) + "s");
+      navigator.clipboard.writeText(url.toString()).then(() => {
+        const orig = copyLinkBtn.innerHTML;
+        copyLinkBtn.innerHTML = svgIcon(ICONS.link) + " Copied!";
+        setTimeout(() => copyLinkBtn.innerHTML = orig, 1500);
+      });
+    });
+    toolsContainer.appendChild(copyLinkBtn);
+
+    // ── 5b. Copy Plain URL ────────────────────────────────────────────────────
+    const copyUrlBtn = document.createElement("button");
+    copyUrlBtn.className = "ytc-btn ytc-tool-btn";
+    copyUrlBtn.innerHTML = svgIcon(ICONS.copyurl) + " Copy URL";
+    copyUrlBtn.title = "Copy clean video URL (no timestamp)";
+    copyUrlBtn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const url = new URL(location.href);
+      // Keep only the video ID — strip timestamp and other params
+      const videoId = url.searchParams.get("v");
+      const cleanUrl = videoId
+        ? `https://www.youtube.com/watch?v=${videoId}`
+        : `https://www.youtube.com/watch?v=${url.searchParams.get("v")}`;
+      navigator.clipboard.writeText(cleanUrl).then(() => {
+        const orig = copyUrlBtn.innerHTML;
+        copyUrlBtn.innerHTML = svgIcon(ICONS.copyurl) + " Copied!";
+        setTimeout(() => copyUrlBtn.innerHTML = orig, 1500);
+      });
+    });
+    toolsContainer.appendChild(copyUrlBtn);
+
+    // ── 6. Copy Embed ─────────────────────────────────────────────────────────
+    const embedBtn = document.createElement("button");
+    embedBtn.className = "ytc-btn ytc-tool-btn";
+    embedBtn.innerHTML = svgIcon(ICONS.embed) + " Embed";
+    embedBtn.title = "Copy embed code";
+    embedBtn.addEventListener("click", (e) => {
+      e.preventDefault(); e.stopPropagation();
+      const url = new URL(location.href);
+      const videoId = url.searchParams.get("v");
+      if (!videoId) return;
+      const code = `<iframe width="560" height="315" src="https://www.youtube.com/embed/${videoId}" frameborder="0" allowfullscreen></iframe>`;
+      navigator.clipboard.writeText(code).then(() => {
+        const orig = embedBtn.innerHTML;
+        embedBtn.innerHTML = svgIcon(ICONS.embed) + " Copied!";
+        setTimeout(() => embedBtn.innerHTML = orig, 1500);
+      });
+    });
+    toolsContainer.appendChild(embedBtn);
+
+    // ── 7. Audio Language Track (hidden until multiple tracks found) ──────────
+    const langSelect = document.createElement("select");
+    langSelect.className = "ytc-select ytc-tool-btn";
+    langSelect.innerHTML = `<option value="">Audio Track</option>`;
+    langSelect.style.display = "none";
+    langSelect.addEventListener("change", (e) => {
+      const p = getPlayer();
+      if (!p || e.target.value === "") return;
+      if (typeof p.setAudioTrack === "function" && typeof p.getAvailableAudioTracks === "function") {
+        const tracks = p.getAvailableAudioTracks();
+        if (tracks && tracks[e.target.value]) p.setAudioTrack(tracks[e.target.value]);
+      }
+    });
+    toolsContainer.appendChild(langSelect);
+
+    setTimeout(() => {
+      const p = getPlayer();
+      if (p && typeof p.getAvailableAudioTracks === "function") {
+        const tracks = p.getAvailableAudioTracks();
+        if (tracks && tracks.length > 1) {
+          langSelect.innerHTML = `<option value="">Audio Track</option>`;
+          tracks.forEach((track, index) => {
+            const opt = document.createElement("option");
+            opt.value = index;
+            opt.textContent = track.name || track.id || `Track ${index + 1}`;
+            langSelect.appendChild(opt);
+          });
+          langSelect.style.display = "inline-flex";
+        }
+      }
+    }, 2500);
+  }
+
   function startQualityDetection() {
     console.log("[YT Controller] Starting quality detection");
     qualityDetectionAttempts = 0;
@@ -781,40 +1162,64 @@
   function detectQualities() {
     qualityDetectionAttempts++;
 
-    if (qualityDetectionAttempts > MAX_DETECTION_ATTEMPTS) {
-      console.log(
-        "[YT Controller] Max detection attempts reached, using fallback"
-      );
-      clearInterval(detectionTimer);
-      populateQualityButtons(["auto", "hd720", "hd1080"]);
+    const p = getPlayer();
+    if (!p) {
+      if (qualityDetectionAttempts > MAX_DETECTION_ATTEMPTS) {
+        console.log("[YT Controller] Max detection attempts reached, using fallback if needed");
+        clearInterval(detectionTimer);
+        if (availableQualities.length === 0) {
+          availableQualities = ["auto", "hd720", "hd1080", "hd1080premium"];
+          populateQualityButtons(availableQualities);
+        }
+      }
       return;
     }
-
-    const p = getPlayer();
-    if (!p) return;
 
     try {
       if (typeof p.getAvailableQualityLevels === "function") {
         const qualities = p.getAvailableQualityLevels();
 
         if (qualities && qualities.length > 0) {
-          console.log("[YT Controller] Detected qualities:", qualities);
-          clearInterval(detectionTimer);
-          availableQualities = qualities; // Store available qualities
-          populateQualityButtons(qualities);
+          // Check if it's likely a complete list (YouTube usually returns auto + at least 2 formats when ready)
+          const isComplete = qualities.length >= 3;
 
-          // Setup player listeners
-          setupPlayerListeners();
-          return;
+          let modifiedQualities = [...qualities];
+          // Forcefully add premium option alongside regular 1080p to let user select it if it exists
+          if (modifiedQualities.includes("hd1080") && !modifiedQualities.includes("hd1080premium")) {
+            modifiedQualities.push("hd1080premium");
+          }
+
+          // If qualities changed, update UI and internal list
+          if (modifiedQualities.join(",") !== availableQualities.join(",")) {
+            console.log("[YT Controller] Detected qualities:", modifiedQualities);
+            availableQualities = modifiedQualities;
+            populateQualityButtons(modifiedQualities);
+            setupPlayerListeners();
+          }
+
+          // Stop checking if we found multiple (proper list), or if max retry exhausted
+          if (isComplete || qualityDetectionAttempts > MAX_DETECTION_ATTEMPTS) {
+            clearInterval(detectionTimer);
+            return;
+          }
         }
       }
     } catch (e) {
       console.log("[YT Controller] Quality detection error:", e);
     }
 
-    // Try alternative detection via DOM inspection
-    if (qualityDetectionAttempts > 10) {
+    // Try alternative detection via DOM inspection ONLY once to avoid spamming the DOM settings click.
+    if (qualityDetectionAttempts === 20 && availableQualities.length <= 1) {
       tryDOMQualityDetection();
+    }
+
+    if (qualityDetectionAttempts > MAX_DETECTION_ATTEMPTS) {
+      console.log("[YT Controller] Max detection attempts reached, using fallback if needed");
+      clearInterval(detectionTimer);
+      if (availableQualities.length === 0) {
+        availableQualities = ["auto", "hd720", "hd1080", "hd1080premium"];
+        populateQualityButtons(availableQualities);
+      }
     }
   }
 
@@ -847,7 +1252,19 @@
             if (text.includes("360p")) detectedQualities.push("medium");
             if (text.includes("480p")) detectedQualities.push("large");
             if (text.includes("720p")) detectedQualities.push("hd720");
-            if (text.includes("1080p")) detectedQualities.push("hd1080");
+            if (
+              text.includes("1080p") &&
+              !text.includes("premium") &&
+              !text.includes("enhanced")
+            ) {
+              detectedQualities.push("hd1080");
+            }
+            if (
+              text.includes("1080p") &&
+              (text.includes("premium") || text.includes("enhanced"))
+            ) {
+              detectedQualities.push("hd1080premium");
+            }
             if (text.includes("1440p")) detectedQualities.push("hd1440");
             if (text.includes("2160p") || text.includes("4k"))
               detectedQualities.push("hd2160");
@@ -903,6 +1320,7 @@
         "large",
         "hd720",
         "hd1080",
+        "hd1080premium",
         "hd1440",
         "hd2160",
         "hd2880",

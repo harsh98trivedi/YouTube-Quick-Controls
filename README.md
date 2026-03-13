@@ -4,76 +4,109 @@
 
 ## 🚀 What is YouTube Quick Controls?
 
-A **powerful Chrome extension** that revolutionizes your YouTube viewing experience by adding instant quality and speed controls directly to every video. Skip the native settings menu and control your viewing with **one click** or **custom keyboard shortcuts**!
+A **powerful Chrome extension** that revolutionizes your YouTube viewing experience by adding instant quality, speed, and media controls directly to every video page. Skip the native settings menu and control your viewing with **one click** or **custom keyboard shortcuts**!
 
-> **Why YouTube Quick Controls?** YouTube's default quality and speed controls are buried in menus and require multiple clicks. This extension puts them right where you need them - instantly accessible above every video.
+> **Why YouTube Quick Controls?** YouTube's default controls are buried in menus. This extension puts everything you need right above the video title — instantly accessible with a single click.
+
+---
 
 ## ✨ Key Features
 
-### 🎯 **Instant Video Quality Control**
+### 🎯 Instant Video Quality Control
 
-- **One-click access** to all available qualities (144p to 8K+)
-- **Auto quality detection** - only shows qualities available for current video
-- **Smart positioning** - controls appear above video title for easy access
+- **One-click access** to all available qualities (Auto, 144p → 8K+)
+- **1080p Premium detection** — shown with a distinct gold pill when available
+- **Smart quality detection** — polls YouTube's API until the full quality list is loaded
+- **Collapsible row** — click the **Quality ◀** label to hide/show the quality buttons, keeping the UI clean
 
-### ⚡ **Extended Speed Control**
+### ⚡ Extended Speed Control
 
-- **12 speed options**: 0.25x, 0.5x, 0.75x, 1x, 1.25x, 1.5x, 1.75x, 2x, 2.5x, 3x, 3.5x, 4x
-- **Goes beyond YouTube's 2x limit** for power users
-- **Perfect for** tutorials, lectures, and content consumption
+- **12 speed presets**: 0.25x, 0.5x, 0.75x, Normal, 1.25x, 1.5x, 1.75x, 2x, 2.5x, 3x, 3.5x, 4x
+- **Goes beyond YouTube's 2x default limit**
+- **Collapsible row** — click the **Speed ◀** label to hide/show speed buttons
+- Both rows collapse **horizontally to the left**, keeping the rightmost label always visible
 
-### ⌨️ **Fully Customizable Keyboard Shortcuts**
+### 🎛️ Media Tools
 
-- **Quality shortcuts**: Alt + 0 (Auto), Alt + 1-9 (144p-8K)
-- **Speed shortcuts**: Shift + \` / 1-9 / 0 / - (0.25x-4x)
-- **Custom mapping**: Change any shortcut to your preference
-- **Conflict-free**: Only works on YouTube, won't interfere with other sites
+A dedicated row of utility tools below the quality buttons:
 
-### 🎨 **Modern, Clean Design**
+| Tool | Description |
+|---|---|
+| 🔊 **Volume** | Hover to reveal a smooth range slider. Click the pill to toggle mute/unmute (restores previous volume). Muted state shows a distinct red dashed border. |
+| 📝 **CC** | Toggle closed captions on/off |
+| 📷 **Frame** | Capture and download the current video frame as a PNG |
+| 🔁 **Loop** | Toggle video looping (button lights up red when active) |
+| 🔗 **Time Link** | Copy a timestamped URL of the video at the current playback position |
+| 🔀 **Copy URL** | Copy the clean video URL with no timestamp or extra parameters |
+| `<>` **Embed** | Copy the HTML `<iframe>` embed code |
+| 🎵 **Audio Track** | Switch between available audio tracks (only visible when multiple tracks exist) |
 
-- **Seamlessly integrated** with YouTube's interface
-- **Dark theme** that matches YouTube's design language
-- **Responsive layout** adapts to all screen sizes
-- **Non-intrusive** - appears only when needed
+### ⌨️ Fully Customizable Keyboard Shortcuts
 
-### ⚙️ **Smart Customization**
+- **Quality shortcuts**: `Alt + 0` (Auto), `Alt + 1–9` (144p → 8K)
+- **Speed shortcuts**: `Shift + `` / 1–9 / 0 / -` (0.25x → 4x)
+- **Custom mapping**: Change any shortcut to your preference via the popup
+- **Conflict-free**: Only active on YouTube, won't interfere with other sites
 
-- **Toggle controls**: Enable/disable quality or speed controls independently
-- **Ultra-modern popup**: Sleek settings interface with animations
-- **Settings sync**: Preferences saved across browser sessions
-- **Live updates**: Changes apply instantly without page refresh
+### 🎨 Modern, Premium Design
+
+- **Compact pill-style buttons** matching YouTube's native chip design language
+- **Collapsible sections** — Quality and Speed rows slide away horizontally with smooth animations
+- **Inline SVG icons** (Lucide-style) for all tool buttons — perfectly aligned with text
+- **Hover effects**: subtle lift (`translateY`), glow shadow, and border accent on all controls
+- **1080p Premium** shown with a gold gradient pill, distinct from regular 1080p
+- **Volume widget**: hover-reveal slider panel appears to the left of the pill with a 350ms grace period so you can reach it comfortably
+- **Dark theme ready** — fully respects YouTube's dark mode using native CSS variables
+
+### ⚙️ Smart Customization
+
+- **Toggle sections independently**: Quality, Speed, and Media Tools can each be enabled/disabled from the popup
+- **Settings sync**: Preferences saved with `chrome.storage.sync` across sessions and devices
+- **Live updates**: Setting changes apply immediately without page refresh
+
+---
 
 ## 🚀 Installation
 
 ### 📦 From Chrome Web Store (Recommended)
 
-1. Visit the [Chrome Web Store page](https://chromewebstore.google.com/detail/)
+1. Visit the [Chrome Web Store page](https://chromewebstore.google.com/detail/youtube-quick-controls/hcbpfgoejhnhmdhkbnkeofhfmfmjfnjg)
 2. Click **"Add to Chrome"**
 3. Confirm by clicking **"Add Extension"**
-4. The extension icon will appear in your toolbar
-5. Visit any YouTube video to see the controls!
+4. Visit any YouTube video to see the controls!
 
 ### 🛠️ Manual Installation (Developer Mode)
 
-Clone the repository
+```bash
 git clone https://github.com/harsh98trivedi/YouTube-Quick-Controls.git
+```
 
-Or download the ZIP file and extract it
+Or download the ZIP and extract it, then:
 
-1. Open Chrome and navigate to `chrome://extensions/`
-2. Enable **"Developer mode"** in the top right
-3. Click **"Load unpacked"** and select the extension folder
-4. The extension will be installed and ready to use!
+1. Open Chrome → `chrome://extensions/`
+2. Enable **"Developer mode"** (top right)
+3. Click **"Load unpacked"** → select the extension folder
+4. Visit any YouTube video — controls appear above the title!
+
+---
 
 ## 📖 How to Use
 
 ### 🎬 Basic Usage
 
-1. **Navigate** to any YouTube video
-2. **Look for controls** positioned above the video title
-3. **Click quality buttons** (Auto, 720p, 1080p, etc.) to change video quality
-4. **Click speed buttons** (0.25x, Normal, 2x, etc.) to change playback speed
-5. **Active selections** are highlighted with visual feedback
+1. Navigate to any YouTube video (`youtube.com/watch?v=...`)
+2. Look for the control rows **above the video title**
+3. **Quality row** (top): Click any quality pill to switch resolution instantly
+4. **Media Tools row** (middle): Use volume, CC, screenshot, loop, and copy tools
+5. **Speed row** (bottom): Click any speed pill to change playback rate
+6. **Collapse rows**: Click the **Quality ◀** or **Speed ◀** label on the right to hide/show that row
+
+### 🔊 Volume Control
+
+- **Hover** over the volume pill → a smooth slider appears to the **left**
+- **Drag** to set any volume level (snaps every 5%)
+- **Click** the pill to toggle mute — clicking again **restores** the previous volume level
+- When muted: pill shows a **red dashed border** and italic "Muted" label
 
 ### ⌨️ Keyboard Shortcuts
 
@@ -94,36 +127,29 @@ Or download the ZIP file and extract it
 
 #### Speed Control
 
-| Shortcut     | Speed | Use Case             |
-| ------------ | ----- | -------------------- |
-| `Shift + \`` | 0.25x | Slow motion analysis |
-| `Shift + 1`  | 0.5x  | Detailed learning    |
-| `Shift + 2`  | 0.75x | Careful listening    |
-| `Shift + 3`  | 1x    | Normal speed         |
-| `Shift + 4`  | 1.25x | Slightly faster      |
-| `Shift + 5`  | 1.5x  | Efficient learning   |
-| `Shift + 6`  | 1.75x | Quick consumption    |
-| `Shift + 7`  | 2x    | Rapid playback       |
-| `Shift + 8`  | 2.5x  | Power browsing       |
-| `Shift + 9`  | 3x    | Ultra-fast scanning  |
-| `Shift + 0`  | 3.5x  | Extreme speed        |
-| `Shift + -`  | 4x    | Maximum speed        |
+| Shortcut     | Speed  | Use Case             |
+| ------------ | ------ | -------------------- |
+| `Shift + \`` | 0.25x  | Slow motion analysis |
+| `Shift + 1`  | 0.5x   | Detailed learning    |
+| `Shift + 2`  | 0.75x  | Careful listening    |
+| `Shift + 3`  | 1x     | Normal speed         |
+| `Shift + 4`  | 1.25x  | Slightly faster      |
+| `Shift + 5`  | 1.5x   | Efficient learning   |
+| `Shift + 6`  | 1.75x  | Quick consumption    |
+| `Shift + 7`  | 2x     | Rapid playback       |
+| `Shift + 8`  | 2.5x   | Power browsing       |
+| `Shift + 9`  | 3x     | Ultra-fast scanning  |
+| `Shift + 0`  | 3.5x   | Extreme speed        |
+| `Shift + -`  | 4x     | Maximum speed        |
 
-### ⚙️ Customization
+### ⚙️ Popup Settings
 
-#### Settings Access
+- Click the extension icon in Chrome's toolbar
+- Toggle **Quality Controls**, **Speed Controls**, or **Media Tools** with switches
+- Customize keyboard shortcuts by clicking any shortcut and pressing your desired key combo
+- Reset to defaults or clear all shortcuts at any time
 
-- **Click the extension icon** in Chrome's toolbar
-- **Modern popup interface** with toggle switches
-- **Customize shortcuts**: Click any shortcut to record new key combination
-- **Reset options**: Restore defaults or clear all shortcuts
-
-#### Available Options
-
-- ✅ **Quality Controls**: Enable/disable quality buttons and shortcuts
-- ✅ **Speed Controls**: Enable/disable speed buttons and shortcuts
-- 🎹 **Custom Shortcuts**: Personalize every keyboard shortcut
-- 🔄 **Real-time Sync**: Settings apply immediately across all tabs
+---
 
 ## 🛠️ Technical Specifications
 
@@ -131,149 +157,95 @@ Or download the ZIP file and extract it
 
 - **Chrome**: Version 88+ (Manifest V3)
 - **Chromium-based**: Edge, Brave, Opera, Vivaldi
-- **Architecture**: Modern web extension standards
 
 ### Permissions Required
 
-| Permission  | Usage                 | Why Needed             |
-| ----------- | --------------------- | ---------------------- |
-| `storage`   | Save user preferences | Remember your settings |
-| `activeTab` | Access YouTube pages  | Add controls to videos |
+| Permission        | Usage                                  | Why Needed                          |
+| ----------------- | -------------------------------------- | ----------------------------------- |
+| `storage`         | Save user preferences                  | Remember settings across sessions   |
+| `activeTab`       | Access YouTube watch pages             | Inject controls above video title   |
+| `clipboardWrite`  | Copy URL / Time Link / Embed code      | Write to clipboard on button click  |
 
 ### Performance
 
-- **Lightweight**: Minimal resource usage
-- **Fast loading**: Controls appear instantly
-- **Efficient**: Uses YouTube's native APIs when possible
-- **Reliable**: Multiple fallback methods for quality detection
+- **Lightweight**: Minimal DOM footprint, no heavy frameworks
+- **Fast startup**: Controls render immediately on page load
+- **Efficient polling**: Quality detection stops as soon as the full list is available
+- **Multiple fallbacks**: DOM inspection used if YouTube API isn't ready
 
-## 🔧 Development
+### Quality Detection System
 
-### Prerequisites
+- **YouTube Player API** (`getAvailableQualityLevels`): primary method
+- **Polling loop** (200ms interval): waits until the complete quality list is available before stopping
+- **DOM fallback**: inspects the settings menu if API is unavailable
+- **Sorted output**: Auto → 144p → … → 1080p → 1080p Premium → 1440p → 4K → 8K
 
-- Chrome Browser with Developer Mode
-- Basic knowledge of JavaScript, HTML, CSS
-
-#### 🎯 Quality Detection System
-
-- **YouTube Player API**: Primary method for quality detection
-- **DOM Inspection**: Fallback for reliability
-- **Smart Filtering**: Only shows available qualities
-- **8K Support**: Handles all resolution formats including future standards
-
-#### ⚡ Speed Control Engine
-
-- **Direct API**: Uses YouTube's native playback rate control
-- **Video Element Fallback**: Ensures compatibility across updates
-- **Extended Range**: Beyond YouTube's default 0.25x-2x limitation
-- **Precise Control**: Accurate speed changes with visual feedback
-
-#### 🎨 UI Integration
-
-- **Native Styling**: Matches YouTube's design system
-- **Responsive Design**: Adapts to all screen sizes and modes
-- **Accessibility**: Proper ARIA labels and keyboard navigation
-- **Performance**: Minimal DOM impact with efficient rendering
+---
 
 ## 🤝 Contributing
-
-We welcome contributions from the community! Here's how you can help:
 
 ### 🐛 Bug Reports
 
 Found a bug? Please create a detailed issue:
 
-- **Steps to reproduce** the problem
-- **Expected vs actual** behavior
-- **Browser version** and environment
-- **Screenshots** if applicable
+- Steps to reproduce
+- Expected vs actual behaviour
+- Browser version and OS
+- Screenshots if applicable
 
 ### 🔧 Pull Requests
 
-Ready to contribute code?
-
 1. **Fork** the repository
 2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
-3. **Follow** our coding standards
-4. **Test** thoroughly on multiple videos
-5. **Commit** with clear messages (`git commit -m 'Add amazing feature'`)
-6. **Push** to your branch (`git push origin feature/amazing-feature`)
-7. **Open** a Pull Request with detailed description
+3. **Test** on multiple YouTube videos and quality levels
+4. **Commit** with clear messages (`git commit -m 'Add amazing feature'`)
+5. **Open** a Pull Request with a detailed description
 
-### Development Guidelines
+---
 
-- **Code Style**: Follow existing patterns and formatting
-- **Testing**: Verify on various YouTube video types and qualities
-- **Documentation**: Update README for new features
-- **Performance**: Ensure changes don't impact loading speed
-- **Compatibility**: Test across different browser versions
+## 📄 Privacy
 
-## 📊 Analytics & Privacy
+This extension operates **entirely locally** in your browser:
 
-### What We Track
+- ❌ No personal data collected
+- ❌ No browsing or watch history tracked
+- ❌ No external servers or analytics
+- ✅ Settings stored locally via `chrome.storage.sync`
+- ✅ Clipboard access only used on explicit button click
 
-- **Extension usage**: Install/uninstall statistics (anonymous)
-- **Error reporting**: Crash logs for debugging (no personal data)
-- **Feature usage**: Which features are most popular (aggregated)
+See [PRIVACY-POLICY.md](PRIVACY-POLICY.md) for full details.
 
-### What We DON'T Track
-
-- ❌ **Personal information**: No names, emails, or accounts
-- ❌ **Browsing history**: No tracking of visited pages
-- ❌ **Video content**: No logging of watched videos
-- ❌ **Search queries**: No monitoring of YouTube searches
-
-### Privacy Commitment
-
-Your privacy is paramount. This extension:
-
-- **Works locally**: All functionality runs in your browser
-- **No external servers**: No data transmission to third parties
-- **Minimal permissions**: Only requests necessary browser access
-- **Open source**: Code is publicly auditable
+---
 
 ## 📈 Changelog
 
-### Version 1.0.0 (Latest)
+### Version 1.1.0
 
-- ✨ **Initial release** with full feature set
-- 🎯 **Quality controls** for all resolutions up to 8K
-- ⚡ **Speed controls** from 0.25x to 4x
-- ⌨️ **Customizable keyboard shortcuts**
-- 🎨 **Modern popup interface**
-- ⚙️ **Flexible settings system**
+- 🎛️ **Media Tools row** — Volume slider, CC, Screenshot, Loop, Copy URL, Time Link, Embed, Audio Track
+- 🔊 **Premium Volume Widget** — hover-reveal slider, mute toggle with restore, distinct muted styling
+- 📐 **Collapsible Quality & Speed rows** — horizontal slide animation, label stays visible on the right
+- 🎨 **Inline SVG icons** — Lucide-style icons replace emojis for pixel-perfect alignment
+- 🏆 **1080p Premium button** — distinct gold gradient pill
+- ✅ **Reliable quality detection** — polling waits for full quality list before stopping
+- ⚙️ **Media Tools toggle** added to extension popup
 
-## 💬 Support & Feedback
+### Version 1.0.0
 
-### Get Help
-
-- 📚 **Documentation**: Check this [README](https://github.com/harsh98trivedi/YouTube-Quick-Controls/blob/master/README.md) first
-- 🐛 **Bug Reports**: [Create an issue](https://github.com/harsh98trivedi/YouTube-Quick-Controls/issues/new?template=bug_report.md)
-
-### Contact
-
-- 🌐 **Website**: [harsh98trivedi.github.io](https://harsh98trivedi.github.io)
-- 📧 **Email**: hi@harshtrivedi.in
-- 🐙 **GitHub**: [@harsh98trivedi](https://github.com/harsh98trivedi)
-- 🐦 **Twitter**: [@harsh98trivedi](https://twitter.com/harsh98trivedi)
-
-## 📄 License
-
-This project is licensed under the **The Unlicense license** - see the [LICENSE](LICENSE) file for complete details.
+- ✨ Initial release with quality and speed controls
+- ⌨️ Customizable keyboard shortcuts
+- 🎨 Modern popup interface
 
 ---
 
 <div align="center">
-  
-  **Made with ❤️ by [Harsh Trivedi](https://harsh98trivedi.github.io/) for YouTube Power Users**
-  
-  *Enhance your YouTube experience with lightning-fast video controls*
-  
-  ⭐ **Star this repo** if you found it helpful!
-  
-  [![GitHub stars](https://img.shields.io/github/stars/harsh98trivedi/YouTube-Quick-Controls?style=social)](https://github.com/harsh98trivedi/YouTube-Quick-Controls/stargazers)
-  [![GitHub forks](https://img.shields.io/github/forks/harsh98trivedi/YouTube-Quick-Controls?style=social)](https://github.com/harsh98trivedi/YouTube-Quick-Controls/network)
-  
+
+**Made with ❤️ by [Harsh Trivedi](https://harsh98trivedi.github.io/) for YouTube Power Users**
+
+*Enhance your YouTube experience with lightning-fast video controls*
+
+⭐ **Star this repo** if you found it helpful!
+
+[![GitHub stars](https://img.shields.io/github/stars/harsh98trivedi/YouTube-Quick-Controls?style=social)](https://github.com/harsh98trivedi/YouTube-Quick-Controls/stargazers)
+[![GitHub forks](https://img.shields.io/github/forks/harsh98trivedi/YouTube-Quick-Controls?style=social)](https://github.com/harsh98trivedi/YouTube-Quick-Controls/network)
+
 </div>
-
-

@@ -1,6 +1,7 @@
 document.addEventListener("DOMContentLoaded", async () => {
   const qualityToggle = document.getElementById("quality-toggle");
   const speedToggle = document.getElementById("speed-toggle");
+  const toolsToggle = document.getElementById("tools-toggle");
   const editBtn = document.getElementById("edit-shortcuts-btn");
   const instructions = document.getElementById("edit-instructions");
   const shortcutActions = document.getElementById("shortcut-actions");
@@ -21,6 +22,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       large: "Alt+4",
       hd720: "Alt+5",
       hd1080: "Alt+6",
+      hd1080premium: "Not Set",
       hd1440: "Alt+7",
       hd2160: "Alt+8",
       hd4320: "Alt+9",
@@ -46,11 +48,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     const settings = await chrome.storage.sync.get({
       qualityEnabled: true,
       speedEnabled: true,
+      toolsEnabled: true,
       shortcuts: defaultShortcuts,
     });
 
     qualityToggle.checked = settings.qualityEnabled;
     speedToggle.checked = settings.speedEnabled;
+    toolsToggle.checked = settings.toolsEnabled;
 
     // Update shortcut display
     updateShortcutDisplay(settings.shortcuts);
@@ -61,6 +65,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     // Default to enabled if error
     qualityToggle.checked = true;
     speedToggle.checked = true;
+    toolsToggle.checked = true;
     updateShortcutDisplay(defaultShortcuts);
   }
 
@@ -89,6 +94,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const settings = {
       qualityEnabled: qualityToggle.checked,
       speedEnabled: speedToggle.checked,
+      toolsEnabled: toolsToggle.checked,
       shortcuts: shortcuts,
     };
 
@@ -343,6 +349,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // Event listeners
   qualityToggle.addEventListener("change", saveSettings);
   speedToggle.addEventListener("change", saveSettings);
+  toolsToggle.addEventListener("change", saveSettings);
   editBtn.addEventListener("click", toggleEditMode);
   resetBtn.addEventListener("click", resetShortcuts);
   clearBtn.addEventListener("click", clearShortcuts);
