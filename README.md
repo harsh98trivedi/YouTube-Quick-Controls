@@ -16,7 +16,9 @@ A **powerful Chrome extension** that revolutionizes your YouTube viewing experie
 
 - **One-click access** to all available qualities (Auto, 144p → 8K+)
 - **1080p Premium detection** — shown with a distinct gold pill when available
+- **Smart quality filling** — when 1080p or higher is detected, the extension automatically displays all standard lower resolutions (720p, 480p, etc.) for convenience
 - **Smart quality detection** — polls YouTube's API until the full quality list is loaded
+- **Zero-Flash rendering** — toggling settings in the popup no longer "reloads" or flashes the quality list; it updates the UI instantly using cached data
 - **Collapsible row** — click the **Quality ◀** label to hide/show the quality buttons, keeping the UI clean
 
 ### ⚡ Extended Speed Control
@@ -32,7 +34,7 @@ A dedicated row of utility tools below the quality buttons:
 
 | Tool | Description |
 |---|---|
-| 🔊 **Volume** | Hover to reveal a smooth range slider. Click the pill to toggle mute/unmute (restores previous volume). Muted state shows a distinct red dashed border. |
+| 🔊 **Volume** | Hover to reveal a pixel-perfect range slider. **Bi-directional sync**: updates instantly even if you change volume via YouTube's slider or keyboard shortcuts. Click the pill to toggle mute/unmute (restores previous volume). Muted state shows a distinct red dashed border. |
 | 📝 **CC** | Toggle closed captions on/off |
 | 📷 **Frame** | Capture and download the current video frame as a PNG |
 | 🔁 **Loop** | Toggle video looping (button lights up red when active) |
@@ -105,6 +107,7 @@ Or download the ZIP and extract it, then:
 
 - **Hover** over the volume pill → a smooth slider appears to the **left**
 - **Drag** to set any volume level (snaps every 5%)
+- **Perfect Sync**: The extension listens for volume changes from the YouTube player itself. If you use YouTube's native slider or the `up/down` arrow keys, the extension's UI updates in real-time.
 - **Click** the pill to toggle mute — clicking again **restores** the previous volume level
 - When muted: pill shows a **red dashed border** and italic "Muted" label
 
@@ -218,6 +221,14 @@ See [PRIVACY-POLICY.md](PRIVACY-POLICY.md) for full details.
 ---
 
 ## 📈 Changelog
+
+### Version 1.3.0
+
+- 🔊 **Bi-directional Volume Sync** — extension UI now stays perfectly in sync even if you change volume via YouTube's native controls or keyboard shortcuts
+- 📽️ **Smart Resolution Filling** — detected HD qualities (1080p+) now automatically populate the full set of standard lower resolutions (720p, 480p, etc.)
+- 🚀 **Zero-Flash UI** — optimized the settings-change logic to prevent the quality list from "reloading" or flashing when toggling features
+- 📏 **Refined Volume Slider** — pixel-perfect progress fill mapping and improved tick alignment for a more premium look
+- 🛠️ **Logic Stability** — improved handling for edge cases in quality detection and player-state synchronization
 
 ### Version 1.1.0
 

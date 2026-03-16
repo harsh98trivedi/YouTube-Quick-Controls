@@ -295,9 +295,9 @@
   background: var(--yt-spec-raised-background, #1e1e1e);
   border: 1px solid rgba(128, 128, 128, 0.22);
   border-radius: 12px;
-  padding: 10px 14px 8px;
-  width: 170px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.4);
+  padding: 12px 14px 10px;
+  width: 210px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
   display: flex;
   flex-direction: column;
   gap: 5px;
@@ -324,9 +324,12 @@
   background: linear-gradient(
     to right,
     #ff0000 0%,
-    #ff0000 calc(var(--val, 100) * 1%),
-    rgba(128,128,128,0.3) calc(var(--val, 100) * 1%),
-    rgba(128,128,128,0.3) 100%
+    /* Trick: map the fill to the thumb range [thumbRadius, 100-thumbRadius] 
+       using calc(thumbRadius + (100% - thumbWidth) * val / 100)
+    */
+    #ff0000 calc(7px + (100% - 14px) * var(--val, 100) / 100),
+    rgba(128,128,128,0.2) calc(7px + (100% - 14px) * var(--val, 100) / 100),
+    rgba(128,128,128,0.2) 100%
   );
   outline: none;
   cursor: pointer;
@@ -340,13 +343,14 @@
   height: 14px;
   border-radius: 50%;
   background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.4);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.5);
   cursor: pointer;
-  transition: transform 0.12s ease;
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
 
 .ytc-vol-slider::-webkit-slider-thumb:hover {
-  transform: scale(1.2);
+  transform: scale(1.15);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
 }
 
 .ytc-vol-slider::-moz-range-thumb {
@@ -363,9 +367,11 @@
 .ytc-vol-ticks {
   display: flex;
   justify-content: space-between;
-  font-size: 9.5px;
-  color: rgba(128, 128, 128, 0.7);
-  padding: 0 2px;
+  font-size: 10px;
+  color: rgba(128, 128, 128, 0.8);
+  /* Alignment Fix: Pad labels to match thumb center range (7px radius) */
+  padding: 0 7px;
+  margin-top: 2px;
   user-select: none;
 }
 

@@ -600,6 +600,54 @@
     return 1;
   }
 
+  function getCurrentVolume() {
+    const p = getPlayer();
+    if (p && typeof p.getVolume === "function") {
+      return p.isMuted() ? 0 : p.getVolume();
+    }
+    const v = document.querySelector("video");
+    return v ? Math.round(v.muted ? 0 : v.volume * 100) : 100;
+  }
+
+  function setVolume(val) {
+    const p = getPlayer();
+    if (p && typeof p.setVolume === "function") {
+      p.setVolume(val);
+      if (val > 0 && typeof p.unMute === "function") p.unMute();
+      if (val === 0 && typeof p.mute === "function") p.mute();
+    } else {
+      const v = document.querySelector("video");
+      if (v) {
+        v.volume = val / 100;
+        v.muted = val === 0;
+      }
+    }
+    if (val > 0) _lastVol = val; // track last non-zero for restore-on-unmute
+    updateVolumeUI(val);
+  }
+
+  function updateVolumeUI(val) {
+    if (!container) return;
+    const volPill = container.querySelector(".ytc-vol-pill");
+    const volSlider = container.querySelector(".ytc-vol-slider");
+    if (!volPill || !volSlider) return;
+
+    if (val === undefined) val = getCurrentVolume();
+
+    const icon = val === 0 ? ICONS.mute : ICONS.volume;
+    const label = val === 0 ? "Muted" : `${val}%`;
+    volPill.innerHTML = svgIcon(icon) + ` ${label}`;
+    volPill.classList.toggle("ytc-vol-muted", val === 0);
+
+    // ALWAYS update the visual progress fill even while dragging
+    volSlider.style.setProperty("--val", val);
+    
+    // Only update the actual slider pointer if the user isn't actively dragging it
+    if (document.activeElement !== volSlider) {
+      volSlider.value = val;
+    }
+  }
+
   // FIXED: Enhanced updateActiveStates with forced refresh
   function updateActiveStates() {
     if (!container) return;
@@ -667,6 +715,11 @@
       if (!speedFound) {
         console.log("[YT Controller] No speed button found for:", currentSpeed);
       }
+    }
+
+    // Update volume UI
+    if (settings.toolsEnabled !== false) {
+      updateVolumeUI();
     }
 
     // FIXED: Force CSS reflow to ensure styles apply
@@ -833,6 +886,10 @@
 
       // Populate buttons based on settings
       if (settings.qualityEnabled) {
+        // Optimization: if we already have qualities, show them immediately to avoid "reload" flash
+        if (availableQualities.length > 0) {
+          populateQualityButtons(availableQualities);
+        }
         startQualityDetection();
       } else {
         setupPlayerListeners();
@@ -910,25 +967,10 @@
     // Distinct volume pill — has extra accent class
     const volPill = document.createElement("button");
     volPill.className = "ytc-btn ytc-tool-btn ytc-vol-pill ytc-vol-accent";
-    const getVol = () => {
-      const p = getPlayer();
-      if (p && typeof p.getVolume === "function") {
-        return p.isMuted() ? 0 : p.getVolume();
-      }
-      const v = document.querySelector("video");
-      return v ? Math.round(v.muted ? 0 : v.volume * 100) : 100;
-    };
-    const updateVolPill = (val) => {
-      const icon = val === 0 ? ICONS.mute : ICONS.volume;
-      // Show a distinct muted label when muted
-      const label = val === 0 ? "Muted" : `${val}%`;
-      volPill.innerHTML = svgIcon(icon) + ` ${label}`;
-      volPill.classList.toggle("ytc-vol-muted", val === 0);
-    };
+    
     // Init: capture real volume before any state changes
-    const initVol = getVol();
+    const initVol = getCurrentVolume();
     if (initVol > 0) _lastVol = initVol;
-    updateVolPill(initVol);
 
     // Slider panel (hidden by default, shown on hover/click)
     const volPanel = document.createElement("div");
@@ -939,7 +981,7 @@
     volSlider.min = 0;
     volSlider.max = 100;
     volSlider.step = 5;   // Snaps every 5%
-    volSlider.value = getVol();
+    volSlider.value = initVol;
     volSlider.className = "ytc-vol-slider";
 
     // Snap labels (0, 25, 50, 75, 100)
@@ -951,33 +993,22 @@
       volTicks.appendChild(t);
     });
 
-    const setVolume = (val) => {
-      const p = getPlayer();
-      if (p && typeof p.setVolume === "function") {
-        p.setVolume(val);
-        if (val > 0 && typeof p.unMute === "function") p.unMute();
-        if (val === 0 && typeof p.mute === "function") p.mute();
-      } else {
-        const v = document.querySelector("video");
-        if (v) { v.volume = val / 100; v.muted = val === 0; }
-      }
-      if (val > 0) _lastVol = val; // track last non-zero for restore-on-unmute
-      updateVolPill(val);
-      volSlider.value = val;
-      volSlider.style.setProperty("--val", val);
-    };
-
-    // Set initial fill position
-    volSlider.style.setProperty("--val", volSlider.value);
-
     volSlider.addEventListener("input", (e) => setVolume(parseInt(e.target.value)));
 
     // Click on pill: mute → restore previous vol; unmuted → mute
     volPill.addEventListener("click", (e) => {
       e.stopPropagation();
-      const cur = getVol();
+      const cur = getCurrentVolume();
       setVolume(cur === 0 ? _lastVol : 0);
     });
+
+    // Initial update
+    volSlider.style.setProperty("--val", initVol);
+    // (We'll update the pill text after it's attached or just do it now)
+    const icon = initVol === 0 ? ICONS.mute : ICONS.volume;
+    const label = initVol === 0 ? "Muted" : `${initVol}%`;
+    volPill.innerHTML = svgIcon(icon) + ` ${label}`;
+    volPill.classList.toggle("ytc-vol-muted", initVol === 0);
 
     // ── Hover: show panel immediately, hide with a grace-period delay ──────────
     // This prevents the panel from vanishing before the cursor can reach it.
@@ -998,7 +1029,6 @@
     // Panel itself — cancel hide when cursor is inside
     volPanel.addEventListener("mouseenter", showPanel);
     volPanel.addEventListener("mouseleave", hidePanel);
-
 
     volPanel.appendChild(volSlider);
     volPanel.appendChild(volTicks);
@@ -1146,6 +1176,32 @@
     }, 2500);
   }
 
+  function fillMissingQualities(qualities) {
+    const list = [...new Set(qualities)];
+    const hasHighRes = list.some(q => 
+      ["hd1080", "hd1080premium", "hd1440", "hd2160", "hd2880", "hd4320", "highres"].includes(q)
+    );
+    
+    if (hasHighRes) {
+      // If 1080p or higher is available, the standard set of lower qualities is virtually always there
+      const standards = ["hd1080", "hd1080premium", "hd720", "large", "medium", "small", "tiny"];
+      standards.forEach(s => {
+        if (!list.includes(s)) list.push(s);
+      });
+    }
+
+    // Always sort for consistent comparison in detectQualities
+    const order = [
+      "auto", "tiny", "small", "medium", "large", "hd720", "hd1080", 
+      "hd1080premium", "hd1440", "hd2160", "hd2880", "hd4320", "highres"
+    ];
+    return list.sort((a, b) => {
+      const ai = order.indexOf(a);
+      const bi = order.indexOf(b);
+      return (ai === -1 ? 99 : ai) - (bi === -1 ? 99 : bi);
+    });
+  }
+
   function startQualityDetection() {
     console.log("[YT Controller] Starting quality detection");
     qualityDetectionAttempts = 0;
@@ -1183,11 +1239,8 @@
           // Check if it's likely a complete list (YouTube usually returns auto + at least 2 formats when ready)
           const isComplete = qualities.length >= 3;
 
-          let modifiedQualities = [...qualities];
-          // Forcefully add premium option alongside regular 1080p to let user select it if it exists
-          if (modifiedQualities.includes("hd1080") && !modifiedQualities.includes("hd1080premium")) {
-            modifiedQualities.push("hd1080premium");
-          }
+          // Fill in missing qualities if 1080p+ is available
+          let modifiedQualities = fillMissingQualities(qualities);
 
           // If qualities changed, update UI and internal list
           if (modifiedQualities.join(",") !== availableQualities.join(",")) {
@@ -1280,13 +1333,17 @@
           settingsBtn.click();
 
           if (detectedQualities.length > 0) {
+            // Apply filling logic and update
+            const finalQualities = fillMissingQualities(detectedQualities);
+            
             console.log(
-              "[YT Controller] DOM detected qualities:",
-              detectedQualities
+              "[YT Controller] DOM detected qualities (filled):",
+              finalQualities
             );
+            
             clearInterval(detectionTimer);
-            availableQualities = detectedQualities; // Store available qualities
-            populateQualityButtons([...new Set(detectedQualities)]);
+            availableQualities = finalQualities;
+            populateQualityButtons(finalQualities);
             setupPlayerListeners();
           }
         }, 200);
@@ -1393,6 +1450,10 @@
       // Listen for video quality changes
       video.removeEventListener("loadedmetadata", updateActiveStates);
       video.addEventListener("loadedmetadata", updateActiveStates);
+
+      // Listen for volume changes (external or internal)
+      video.removeEventListener("volumechange", updateActiveStates);
+      video.addEventListener("volumechange", updateActiveStates);
     }
 
     // Start periodic updates with more frequent checks
